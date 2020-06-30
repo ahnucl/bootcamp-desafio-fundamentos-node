@@ -1,7 +1,7 @@
 import { Router } from 'express';
 
 import TransactionsRepository from '../repositories/TransactionsRepository';
-// import CreateTransactionService from '../services/CreateTransactionService';
+import CreateTransactionService from '../services/CreateTransactionService';
 
 const transactionRouter = Router();
 
@@ -9,6 +9,7 @@ const transactionsRepository = new TransactionsRepository();
 
 transactionRouter.get('/', (request, response) => {
   try {
+    // Só retorna um objeto a partir de consultas, não há necessidade de criar um service aqui
     const transactions = transactionsRepository.all();
     const balance = transactionsRepository.getBalance();
 
@@ -22,15 +23,15 @@ transactionRouter.post('/', (request, response) => {
   try {
     const { title, value, type } = request.body;
 
-    const balance = transactionsRepository.getBalance();
+    const createTransactionService = new CreateTransactionService(
+      transactionsRepository,
+    );
 
-    if (type === 'outcome' && value > balance.total) {
-      return response
-        .status(400)
-        .json({ error: 'Transaction value exceeds balance total.' });
-    }
-
-    const transaction = transactionsRepository.create({ title, value, type });
+    const transaction = createTransactionService.execute({
+      title,
+      value,
+      type,
+    });
 
     return response.json(transaction);
   } catch (err) {
